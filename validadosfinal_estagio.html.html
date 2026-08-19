@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador de Convocação de Estágio</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f3f4f6;
+            --card: #ffffff;
+            --text: #1f2937;
+            --border: #e5e7eb;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            padding: 20px;
+            line-height: 1.5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--card);
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        h1 { text-align: center; color: var(--primary); }
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .box {
+            padding: 15px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: #f9fafb;
+        }
+        .box h3 { margin-top: 0; font-size: 1.1em; color: #4b5563; }
+        label { display: block; margin-top: 10px; font-weight: 500; font-size: 0.9em; }
+        input[type="date"] {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover { background-color: #1d4ed8; }
+        #resultado { display: none; margin-top: 30px; padding-top: 20px; border-top: 2px dashed var(--border); }
+        .status {
+            text-align: center; padding: 15px; border-radius: 8px; font-size: 1.2em; font-weight: bold; margin-bottom: 20px;
+        }
+        .status.aprovado { background-color: #dcfce7; color: var(--success); border: 1px solid #bbf7d0; }
+        .status.reprovado { background-color: #fee2e2; color: var(--danger); border: 1px solid #fecaca; }
+        .resumo { display: flex; justify-content: space-around; margin-bottom: 20px; font-size: 1.1em; }
+        .lista-dias { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .lista { border: 1px solid var(--border); border-radius: 6px; padding: 10px; background: #fff; max-height: 250px; overflow-y: auto; }
+        .lista h4 { margin: 0 0 10px 0; border-bottom: 1px solid var(--border); padding-bottom: 5px; }
+        .lista ul { margin: 0; padding-left: 20px; font-size: 0.9em; color: #4b5563; }
+        @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Validador de Vigência</h1>
+    
+    <div class="grid">
+        <div class="box">
+            <h3>Datas informadas pelo Aluno</h3>
+            <label>Início da Vigência:</label>
+            <input type="date" id="aluno_inicio">
+            <label>Fim da Vigência:</label>
+            <input type="date" id="aluno_fim">
+        </div>
+        
+        <div class="box">
+            <h3>Convocação no Sistema (Base)</h3>
+            <label>Início da Convocação:</label>
+            <input type="date" id="base_inicio">
+            <label>Fim da Convocação:</label>
+            <input type="date" id="base_fim">
+        </div>
+    </div>
+
+    <button onclick="calcularTolerancia()">Verificar Tolerância</button>
+
+    <div id="resultado">
+        <div id="status_box" class="status"></div>
+        
+        <div class="resumo">
+            <div><strong>Dias úteis DENTRO:</strong> <span id="qtd_dentro">0</span></div>
+            <div><strong>Dias úteis FORA:</strong> <span id="qtd_fora">0</span></div>
+        </div>
+
+        <div class="lista-dias">
+            <div class="lista">
+                <h4>✅ Dias Úteis Dentro</h4>
+                <ul id="lista_dentro"></ul>
+            </div>
+            <div class="lista">
+                <h4>❌ Dias Úteis Fora</h4>
+                <ul id="lista_fora"></ul>
+            </div>
+            <div class="lista">
+                <h4>💤 Finais de Semana (Ignorados)</h4>
+                <ul id="lista_fds"></ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function parseData(dateString) {
+        // Adiciona T00:00:00 para evitar problemas de fuso horário que podem mudar o dia
+        return new Date(dateString + 'T00:00:00');
+    }
+
+    function formatarData(data) {
+        return data.toLocaleDateString('pt-BR');
+    }
+
+    function calcularTolerancia() {
+        const aInicioStr = document.getElementById('aluno_inicio').value;
+        const aFimStr = document.getElementById('aluno_fim').value;
+        const bInicioStr = document.getElementById('base_inicio').value;
+        const bFimStr = document.getElementById('base_fim').value;
+
+        if (!aInicioStr || !aFimStr || !bInicioStr || !bFimStr) {
+            alert("Por favor, preencha todas as datas antes de verificar.");
+            return;
+        }
+
+        const alunoInicio = parseData(aInicioStr);
+        const alunoFim = parseData(aFimStr);
+        const baseInicio = parseData(bInicioStr);
+        const baseFim = parseData(bFimStr);
+
+        if (alunoFim < alunoInicio) {
+            alert("A data de fim do aluno não pode ser menor que a de início.");
+            return;
+        }
+
+        let diasDentro = [];
+        let diasFora = [];
+        let diasFDS = [];
+
+        let dataAtual = new Date(alunoInicio);
+
+        // Percorre cada dia do período informado pelo aluno
+        while (dataAtual <= alunoFim) {
+            const diaSemana = dataAtual.getDay(); // 0 = Domingo, 6 = Sábado
+            const dataFormatada = formatarData(dataAtual);
+
+            if (diaSemana === 0 || diaSemana === 6) {
+                diasFDS.push(dataFormatada);
+            } else {
+                // É dia útil. Verifica se está dentro do período do sistema
+                if (dataAtual >= baseInicio && dataAtual <= baseFim) {
+                    diasDentro.push(dataFormatada);
+                } else {
+                    diasFora.push(dataFormatada);
+                }
+            }
+            
+            // Avança para o próximo dia
+            dataAtual.setDate(dataAtual.getDate() + 1);
+        }
+
+        // Renderiza os resultados
+        document.getElementById('resultado').style.display = 'block';
+        document.getElementById('qtd_dentro').innerText = diasDentro.length;
+        document.getElementById('qtd_fora').innerText = diasFora.length;
+
+        const statusBox = document.getElementById('status_box');
+        if (diasFora.length <= 15) {
+            statusBox.className = 'status aprovado';
+            statusBox.innerHTML = `APROVADO! O aluno tem ${diasFora.length} dia(s) útil(eis) fora, dentro da tolerância de 15.`;
+        } else {
+            statusBox.className = 'status reprovado';
+            statusBox.innerHTML = `NÃO LIBERAR! O aluno tem ${diasFora.length} dias úteis fora, ultrapassando o limite de 15.`;
+        }
+
+        // Preenche as listas
+        document.getElementById('lista_dentro').innerHTML = diasDentro.map(d => `<li>${d}</li>`).join('') || '<li>Nenhum</li>';
+        document.getElementById('lista_fora').innerHTML = diasFora.map(d => `<li>${d}</li>`).join('') || '<li>Nenhum</li>';
+        document.getElementById('lista_fds').innerHTML = diasFDS.map(d => `<li>${d}</li>`).join('') || '<li>Nenhum</li>';
+    }
+</script>
+
+</body>
+</html>
