@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Calculadora de Carga Horária de Estágio</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #1e293b;
+    }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px 16px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    h1, h2, h3 { margin-top: 0; }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid var(--border);
+      background: #f1f5f9;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    input[type="date"], input[type="time"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      box-sizing: border-box;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .grid-days {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .day-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fafafa;
+    }
+    .day-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    button.calc-btn {
+      width: 100%;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 14px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 16px;
+    }
+    button.calc-btn:hover { opacity: 0.9; }
+    .result-summary {
+      background: #eff6ff;
+      border-left: 4px solid var(--primary);
+      padding: 16px;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 20px;
+    }
+    .result-summary p { margin: 6px 0; font-size: 16px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+    th { background: #f1f5f9; }
+    .status-sim { background: #dcfce7; color: #166534; font-weight: bold; }
+    .status-feriado { background: #fee2e2; color: #991b1b; font-weight: bold; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="card">
+    <h1>Calculadora de Carga Horária de Estágio</h1>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="setMode('custom')">Dias Personalizados (Dom-Sáb)</button>
+      <button class="tab-btn" onclick="setMode('fixed')">Fixo Segunda a Sexta</button>
+    </div>
+
+    <div class="row">
+      <div class="form-group">
+        <label for="startDate">Início da Vigência:</label>
+        <input type="date" id="startDate" />
+      </div>
+      <div class="form-group">
+        <label for="endDate">Fim da Vigência:</label>
+        <input type="date" id="endDate" />
+      </div>
+    </div>
+
+    <!-- MODO FIXO -->
+    <div id="fixedMode" class="hidden">
+      <div class="form-group">
+        <label for="fixedTime">Horário Diário (Horas:Minutos):</label>
+        <input type="time" id="fixedTime" value="06:00" />
+      </div>
+    </div>
+
+    <!-- MODO PERSONALIZADO -->
+    <div id="customMode">
+      <h3>Horários por dia da semana (deixe em branco se não houver estágio):</h3>
+      <div class="grid-days">
+        <div class="day-box">
+          <div class="day-header"><input type="checkbox" id="check-0" onchange="toggleDay(0)"> <label for="check-0">Domingo</label></div>
+          <input type="time" id="time-0" disabled />
+        </div>
+        <div class="day-box">
+          <div class="day-header"><input type="checkbox" id="check-1" checked onchange="toggleDay(1)"> <label for="check-1">Segunda-feira</label></div>
+          <input type="time" id="time-1" value="04:27" />
+        </div>
+        <div class="day-box">
+          <div class="day-header"><input type="checkbox" id="check-2" checked onchange="toggleDay(2)"> <label for="check-2">Terça-feira</label></div>
+          <input type="time" id="time-2" value="04:27" />
+        </div>
+        <div class="day-box">
+          <div class="day-header"><input type="checkbox" id="check-3" checked onchange="toggleDay(3)"> <label for="check-3">Quarta-feira</label></div>
+          <input type="time" id="time-3" value="04:27" />
+        </div>
+        <div class="day-box">
+          <div class="day-header"><input type="checkbox" id="check-4" checked onchange="toggleDay(4)"> <label for="check-4">Quinta-feira</label></div>
+          <input type="time" id="time-4" value="04:27" />
+        </div>
+        <div class="day-box">
+          <div class="day-header"><input type="checkbox" id="check-5" checked onchange="toggleDay(5)"> <label for="check-5">Sexta-feira</label></div>
+          <input type="time" id="time-5" value="04:27" />
+        </div>
+        <div class="day-box">
+          <div class="day-header"><input type="checkbox" id="check-6" onchange="toggleDay(6)"> <label for="check-6">Sábado</label></div>
+          <input type="time" id="time-6" disabled />
+        </div>
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">Calcular Carga Horária</button>
+  </div>
+
+  <div id="resultsCard" class="card hidden">
+    <h2>Resultado do Cálculo</h2>
+    <div class="result-summary">
+      <p><strong>Total da Carga Horária:</strong> <span id="totalHours">0h 0m</span> (<span id="decimalHours">0</span> horas decimais)</p>
+      <p><strong>Dias Efetivos de Estágio:</strong> <span id="totalDays">0</span> dias</p>
+      <p><strong>Feriados no Período (em dias úteis de estágio):</strong> <span id="holidaysCount">0</span></p>
+    </div>
+
+    <h3>Detalhamento Dia a Dia</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Dia da Semana</th>
+          <th>Horas</th>
+          <th>Status / Observação</th>
+        </tr>
+      </thead>
+      <tbody id="detailsTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let mode = 'custom';
+
+  const HOLIDAYS = {
+    // 2025
+    "2025-01-01": "Confraternização Universal",
+    "2025-03-03": "Carnaval",
+    "2025-03-04": "Carnaval",
+    "2025-04-18": "Paixão de Cristo",
+    "2025-04-21": "Tiradentes",
+    "2025-05-01": "Dia do Trabalho",
+    "2025-06-19": "Corpus Christi",
+    "2025-09-07": "Independência do Brasil",
+    "2025-10-12": "Nossa Sr.a Aparecida",
+    "2025-11-02": "Finados",
+    "2025-11-15": "Proclamação da República",
+    "2025-11-20": "Dia de Zumbi e da Consciência Negra",
+    "2025-12-25": "Natal",
+    // 2026
+    "2026-01-01": "Confraternização Universal",
+    "2026-02-16": "Carnaval",
+    "2026-02-17": "Carnaval",
+    "2026-04-03": "Paixão de Cristo",
+    "2026-04-21": "Tiradentes",
+    "2026-05-01": "Dia do Trabalho",
+    "2026-06-04": "Corpus Christi",
+    "2026-09-07": "Independência do Brasil",
+    "2026-10-12": "Nossa Sr.a Aparecida",
+    "2026-11-02": "Finados",
+    "2026-11-15": "Proclamação da República",
+    "2026-11-20": "Dia de Zumbi e da Consciência Negra",
+    "2026-12-25": "Natal",
+    // 2027
+    "2027-01-01": "Confraternização Universal",
+    "2027-02-08": "Carnaval",
+    "2027-02-09": "Carnaval",
+    "2027-03-26": "Paixão de Cristo",
+    "2027-04-21": "Tiradentes",
+    "2027-05-01": "Dia do Trabalho",
+    "2027-05-27": "Corpus Christi",
+    "2027-09-07": "Independência do Brasil",
+    "2027-10-12": "Nossa Sr.a Aparecida",
+    "2027-11-02": "Finados",
+    "2027-11-15": "Proclamação da República",
+    "2027-11-20": "Dia de Zumbi e da Consciência Negra",
+    "2027-12-25": "Natal"
+  };
+
+  const WEEKDAYS = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+
+  function setMode(newMode) {
+    mode = newMode;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (mode === 'custom') {
+      document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      document.getElementById('customMode').classList.remove('hidden');
+      document.getElementById('fixedMode').classList.add('hidden');
+    } else {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      document.getElementById('customMode').classList.add('hidden');
+      document.getElementById('fixedMode').classList.remove('hidden');
+    }
+  }
+
+  function toggleDay(dayIndex) {
+    const chk = document.getElementById(`check-${dayIndex}`);
+    const timeInput = document.getElementById(`time-${dayIndex}`);
+    timeInput.disabled = !chk.checked;
+  }
+
+  function parseTime(timeStr) {
+    if (!timeStr) return 0;
+    const [h, m] = timeStr.split(':').map(Number);
+    return (h || 0) * 60 + (m || 0);
+  }
+
+  function calculate() {
+    const startStr = document.getElementById('startDate').value;
+    const endStr = document.getElementById('endDate').value;
+
+    if (!startStr || !endStr) {
+      alert("Por favor, preencha as datas de início e fim da vigência.");
+      return;
+    }
+
+    const start = new Date(startStr + "T00:00:00");
+    const end = new Date(endStr + "T00:00:00");
+
+    if (start > end) {
+      alert("A data inicial não pode ser maior que a data final.");
+      return;
+    }
+
+    let totalMinutes = 0;
+    let workedDaysCount = 0;
+    let holidayCount = 0;
+    const tableBody = document.getElementById('detailsTable');
+    tableBody.innerHTML = '';
+
+    let current = new Date(start);
+
+    while (current <= end) {
+      const dayOfWeek = current.getDay();
+      const dateIso = current.toISOString().split('T')[0];
+      const dateFormatted = current.toLocaleDateString('pt-BR');
+      const holidayName = HOLIDAYS[dateIso];
+
+      let dayMinutes = 0;
+      let shouldWork = false;
+
+      if (mode === 'fixed') {
+        if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+          shouldWork = true;
+          dayMinutes = parseTime(document.getElementById('fixedTime').value);
+        }
+      } else {
+        const chk = document.getElementById(`check-${dayOfWeek}`);
+        if (chk && chk.checked) {
+          shouldWork = true;
+          dayMinutes = parseTime(document.getElementById(`time-${dayOfWeek}`).value);
+        }
+      }
+
+      if (shouldWork) {
+        const tr = document.createElement('tr');
+        if (holidayName) {
+          holidayCount++;
+          tr.innerHTML = `
+            <td>${dateFormatted}</td>
+            <td>${WEEKDAYS[dayOfWeek]}</td>
+            <td>00:00</td>
+            <td class="status-feriado">Feriado Descontado (${holidayName})</td>
+          `;
+        } else {
+          workedDaysCount++;
+          totalMinutes += dayMinutes;
+          const h = Math.floor(dayMinutes / 60);
+          const m = dayMinutes % 60;
+          const timeFormatted = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+
+          tr.innerHTML = `
+            <td>${dateFormatted}</td>
+            <td>${WEEKDAYS[dayOfWeek]}</td>
+            <td>${timeFormatted}</td>
+            <td class="status-sim">Contabilizado</td>
+          `;
+        }
+        tableBody.appendChild(tr);
+      }
+
+      current.setDate(current.getDate() + 1);
+    }
+
+    const totalH = Math.floor(totalMinutes / 60);
+    const totalM = totalMinutes % 60;
+    const decimalH = (totalMinutes / 60).toFixed(2);
+
+    document.getElementById('totalHours').innerText = `${totalH}h ${totalM}m`;
+    document.getElementById('decimalHours').innerText = decimalH;
+    document.getElementById('totalDays').innerText = workedDaysCount;
+    document.getElementById('holidaysCount').innerText = holidayCount;
+
+    document.getElementById('resultsCard').classList.remove('hidden');
+  }
+</script>
+
+</body>
+</html>
