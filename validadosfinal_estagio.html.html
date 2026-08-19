@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Validador de Convocação de Estágio</title>
     <style>
+
+        /* ESTILOS DO MENU */
+        .menu-topo {
+            background-color: #1f2937;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .menu-topo a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .menu-topo a:hover {
+            background-color: #374151;
+        }
+        .menu-topo a.ativo {
+            background-color: var(--primary); /* Usa a cor azul do projeto */
+        }
         :root {
             --primary: #2563eb;
             --success: #16a34a;
@@ -79,7 +103,12 @@
     </style>
 </head>
 <body>
-
+    <!-- INÍCIO DO MENU -->
+    <nav class="menu-topo">
+        <a href="index.html" class="ativo">Validador de Estágios</a>
+        <a href="projeto2.html">Minha Outra Ferramenta</a>
+    </nav>
+    <!-- FIM DO MENU -->
 <div class="container">
     <h1>Validador de Vigência</h1>
     
